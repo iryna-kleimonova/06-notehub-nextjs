@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchNotes } from '@/lib/api';
 import NoteList from '@/components/NoteList/NoteList';
 import Pagination from '@/components/Pagination/Pagination';
@@ -10,17 +10,28 @@ import Modal from '@/components/Modal/Modal';
 import NoteForm from '@/components/NoteForm/NoteForm';
 import { useDebounce } from 'use-debounce';
 import css from '@/components/NotePage/NotePage.module.css';
+import { NotesResponse } from '@/types/note';
 
-export default function NotesClient() {
+interface NotesClientProps {
+  initialNotes: NotesResponse;
+}
+
+export default function NotesClient({ initialNotes }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 500);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['notes', page, debouncedSearch, 12],
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data = initialNotes } = useQuery({
+    queryKey: ['notes', page, debouncedSearch],
     queryFn: () => fetchNotes({ page, perPage: 12, search: debouncedSearch }),
     placeholderData: keepPreviousData,
+    initialData:
+      page === 1 && debouncedSearch === '' ? initialNotes : undefined,
   });
 
   const handleOpen = () => setIsModalOpen(true);
@@ -42,10 +53,7 @@ export default function NotesClient() {
         </button>
       </header>
 
-      {isLoading && <p>Loading, please wait...</p>}
-      {isError && <p>Error: {(error as Error).message}</p>}
-
-      {data?.data && <NoteList notes={data.data} />}
+      <NoteList notes={data.data} />
 
       {isModalOpen && (
         <Modal onClose={handleClose}>

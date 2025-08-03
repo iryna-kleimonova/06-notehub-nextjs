@@ -8,3 +8,8 @@ export interface Note {
 }
 
 export type NoteTag = 'Todo' | 'Work' | 'Personal' | 'Meeting' | 'Shopping';
+
+export interface NotesResponse {
+  data: Note[];
+  total: number;
+}
